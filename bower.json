@@ -1,0 +1,12 @@
+{
+  "name": "teste",
+  "version": "0.0.1-pre",
+  "private": true,
+  "devDependencies": {
+    "almond": "0.2.9",
+    "react": "0.13.1",
+    "requirejs": "2.1.x",
+    "requirejs-react-jsx": "0.13.1",
+    "requirejs-text": "2.0.x"
+  }
+}
