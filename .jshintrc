@@ -4,6 +4,7 @@
     "eqnull": true,
     "expr": true,
     "immed": true,
+    "newcap": false,
     "noarg": true,
     "onevar": false,
     "quotmark": "double",
@@ -11,6 +12,8 @@
     "trailing": true,
     "undef": true,
     "unused": true,
+
+    "node": true,
 
     "globals": {
         "define": false,

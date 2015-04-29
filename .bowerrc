@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "postinstall": "./node_modules/.bin/cldr-data-downloader -i bower_components/cldr-data/index.json -o bower_components/cldr-data/"
+  }
+}
+

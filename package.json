@@ -20,12 +20,12 @@
   "licenses": [
     {
       "type": "MIT",
-      "url":
-      "https://github.com/rxaviers/cldrjs/blob/master/LICENSE-MIT"
+      "url": "https://github.com/rxaviers/cldrjs/blob/master/LICENSE-MIT"
     }
   ],
   "devDependencies": {
-    "react-tools": "0.13.x",
+    "async": "^0.9.0",
+    "cldr-data-downloader": "0.2.x",
     "grunt": "0.4.x",
     "grunt-compare-size": "0.4.x",
     "grunt-contrib-clean": "0.6.x",
@@ -37,6 +37,8 @@
     "grunt-mocha": "0.4.x",
     "grunt-react": "0.12.x",
     "gzip-js": "0.3.x",
-    "matchdep": "*"
+    "matchdep": "*",
+    "react-tools": "0.13.x",
+    "requirejs": "^2.1.17"
   }
 }

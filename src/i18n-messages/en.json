@@ -1,0 +1,12 @@
+{
+  "en": {
+    "search": {
+      "only-show-products-in-stock": "Only show products in stock",
+      "placeholder": "Search..."
+    },
+    "product-table": {
+      "name": "Name",
+      "price": "Price"
+    }
+  }
+}

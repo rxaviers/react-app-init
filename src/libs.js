@@ -1,3 +1,5 @@
 define([
-  "react"
+  "globalize",
+  "react",
+  "react-globalize"
 ]);

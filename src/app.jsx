@@ -1,4 +1,11 @@
-define(["react"], function(React) {
+define([
+  "globalize",
+  "react",
+  "react-globalize"
+], function(Globalize, React, ReactGlobalize) {
+
+var FormatCurrency = ReactGlobalize.FormatCurrency;
+var FormatMessage = ReactGlobalize.FormatMessage;
 
 var ProductCategoryRow = React.createClass({
     render: function() {
@@ -13,10 +20,14 @@ var ProductRow = React.createClass({
             <span style={{color: "red"}}>
                 {this.props.product.name}
             </span>;
+        var value = this.props.product.price.value;
+        var currency = this.props.product.price.currency;
         return (
             <tr>
                 <td>{name}</td>
-                <td>{this.props.product.price}</td>
+                <td>
+                  <FormatCurrency value={value} currency={currency} />
+                </td>
             </tr>
         );
     }
@@ -24,8 +35,6 @@ var ProductRow = React.createClass({
 
 var ProductTable = React.createClass({
     render: function() {
-        /* globals console:false */
-        console.log(this.props);
         var rows = [];
         var lastCategory = null;
         this.props.products.forEach(function(product) {
@@ -42,8 +51,8 @@ var ProductTable = React.createClass({
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Price</th>
+                        <th><FormatMessage path="product-table/name" /></th>
+                        <th><FormatMessage path="product-table/price" /></th>
                     </tr>
                 </thead>
                 <tbody>{rows}</tbody>
@@ -64,7 +73,7 @@ var SearchBar = React.createClass({
             <form>
                 <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={Globalize.formatMessage("search/placeholder")}
                     value={this.props.filterText}
                     ref="filterTextInput"
                     onChange={this.handleChange}
@@ -77,7 +86,7 @@ var SearchBar = React.createClass({
                         onChange={this.handleChange}
                     />
                     {" "}
-                    Only show products in stock
+                    <FormatMessage path="search/only-show-products-in-stock" />
                 </p>
             </form>
         );
@@ -86,6 +95,7 @@ var SearchBar = React.createClass({
 
 var FilterableProductTable = React.createClass({
     getInitialState: function() {
+        Globalize.locale(this.props.locale);
         return {
             filterText: "",
             inStockOnly: false
@@ -117,18 +127,6 @@ var FilterableProductTable = React.createClass({
     }
 });
 
-
-var PRODUCTS = [
-  {category: "Sporting Goods", price: "$49.99", stocked: true, name: "Football"},
-  {category: "Sporting Goods", price: "$9.99", stocked: true, name: "Baseball"},
-  {category: "Sporting Goods", price: "$29.99", stocked: false, name: "Basketball"},
-  {category: "Electronics", price: "$99.99", stocked: true, name: "iPod Touch"},
-  {category: "Electronics", price: "$399.99", stocked: false, name: "iPhone 5"},
-  {category: "Electronics", price: "$199.99", stocked: true, name: "Nexus 7"}
-];
-
-/* globals console:false, document:false */
-console.log("start");
-React.render(<FilterableProductTable products={PRODUCTS} />, document.body);
+return FilterableProductTable;
 
 });

@@ -2,9 +2,11 @@ module.exports = function(grunt) {
 
   "use strict";
 
+  var async = require("async");
+  var extend = require("util")._extend;
+  var fs = require("fs");
   var path = require("path");
   var pkg = require("./package.json");
-  var util = require("util");
 
   function mountFolder(connect, _path) {
     return connect.static(path.resolve(_path));
@@ -70,17 +72,31 @@ module.exports = function(grunt) {
         }]
       }
     },
+    globalize: {
+      options: {
+        locales: ["en", "pt"],
+        dest: "dist/i18n-{locale}.js",
+        processContent: function(locale, content) {
+          return content.replace( /define\( \[/, "define(\"compiled-i18n-data\", [" );
+        }
+      }
+    },
     requirejs: {
-      options: util._extend(
-        [require("./src/config")].reduce(function(unused, config) {
-          // We chose to avoid having the config json object present on the
-          // built file. Therefore, we're using this hack to prevent duplicating
-          // config (from src/app.js) in here (Gruntfile), and to allow the
-          // slight changes below.
+      options: extend(
+        [extend({}, require("./src/config"))].reduce(function(unused, config) {
+          // This prevents duplicating requirejs config in here (Gruntfile), and
+          // to allow the slight changes below.
           config.paths.almond = "../bower_components/almond/almond";
+          config.paths["globalize-runtime"] = "../bower_components/globalize/dist/globalize-runtime";
+          config.paths["compiled-i18n-data"] = "../dist/i18n-en";
           return config;
         }, {}), {
-        dir: "dist/.build",
+        map: {
+          "*": {
+            "globalize": "globalize-runtime"
+          }
+        },
+        dir: "tmp/.build",
         appDir: "src",
         baseUrl: ".",
         optimize: "none",
@@ -88,18 +104,20 @@ module.exports = function(grunt) {
         skipSemiColonInsertion: true,
         skipModuleInsertion: true,
         findNestedDependencies: true,
-        logLevel: 2,
-        stubModules : ["config", "libs", "text"],
+        stubModules : ["libs", "text"],
         onBuildWrite: function (id, path, contents) {
-          return contents.replace(/jsx!/g, "");
+          return contents
+            .replace(/"globalize"/g, "\"globalize-runtime\"")
+            .replace(/"globalize\//g, "\"globalize-runtime\/")
+            .replace(/jsx!/g, "");
         }
       }),
       bundles: {
         options: {
           modules: [{
             name: "app",
-            include: ["main"],
-            exclude: ["libs", "jsx"],
+            include: ["production"],
+            exclude: ["libs", "jsx", "compiled-i18n-data"],
             create: true
           }, {
             name: "libs",
@@ -126,7 +144,7 @@ module.exports = function(grunt) {
       },
       dist: {
         expand: true,
-        cwd: "dist/.build/",
+        cwd: "tmp/.build/",
         src: [ "app.js", "libs.js" ],
         dest: "dist/"
       }
@@ -137,6 +155,16 @@ module.exports = function(grunt) {
         dest: "dist/app.min.js"
       },
 
+      i18n: {
+        expand: true,
+        cwd: "dist/",
+        src: "i18n-*.js",
+        dest: "dist/",
+        rename: function(dest, filename) {
+          return path.join(dest, filename.replace( /\.js$/, ".min.js" ));
+        }
+      },
+
       libs: {
         src: "dist/libs.js",
         dest: "dist/libs.min.js"
@@ -145,6 +173,7 @@ module.exports = function(grunt) {
     compare_size: {
       files: [
         "dist/app.min.js",
+        "dist/i18n-*.min.js",
         "dist/libs.min.js"
       ],
       options: {
@@ -173,12 +202,68 @@ module.exports = function(grunt) {
     "mocha"
   ]);
   */
+
+  grunt.registerTask("globalize", function() {
+    var GlobalizeCompiler = require("./bower_components/globalize/tool/compiler");
+    var requirejs = require("requirejs");
+    var config = require("./src/config");
+
+    var done = this.async();
+    var options = this.options({
+      processContent: function(locale, content) {
+        return content;
+      }
+    });
+
+    config.nodeRequire = require;
+    config.baseUrl = __dirname + "/src";
+    requirejs.config(config);
+
+    var App = requirejs("jsx!app");
+    var Globalize = requirejs("globalize");
+    var products = requirejs("fixtures/products");
+    var React = requirejs("react");
+
+    async.each(options.locales, function(locale, callback) {
+      requirejs("i18n-data")(locale, function(error) {
+        if (error) {
+          return callback(error);
+        }
+
+        // Have react to render all passed components, therefore any formatters in
+        // use will be created.
+        React.renderToString(React.createElement(App, {
+          locale: locale,
+          products: products
+        }));
+
+        // Compile all generated formatters.
+        grunt.file.mkdir("dist");
+        fs.writeFileSync(
+          options.dest.replace(/{locale}/, locale),
+          options.processContent(locale, GlobalizeCompiler(Globalize.cache))
+        );
+
+        Globalize.cache = {};
+
+        callback();
+      });
+    }, function(error) {
+      if (error) {
+        grunt.log.error(error);
+        return done(error);
+      }
+      done();
+    });
+  });
+
   grunt.registerTask("default", [
     "clean:tmp",
     "react",
     "jshint",
     //"test",
     "clean:dist",
+    "globalize",
     "requirejs",
     "copy",
     "uglify",
